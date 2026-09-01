@@ -254,7 +254,9 @@ class ChatEdit(ModalScreen[str]):
                 capabilities.append("vision")
 
         self._update_capabilities_ui(capabilities)
-        self.query_one("#save-btn", Button).disabled = False
+        save_btn = self.query_one("#save-btn", Button)
+        save_btn.disabled = False
+        save_btn.focus()
 
     def _update_capabilities_ui(self, capabilities: list[str]) -> None:
         tool_selector = self.query_one(ToolSelector)

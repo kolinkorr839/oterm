@@ -235,11 +235,14 @@ class ChatContainer(Widget):
     def _rebuild_agent(self) -> None:
         """(Re)build the agent for the current chat_model. Defers errors to send time."""
         tools, toolsets, capabilities = _resolve_tools(self.chat_model.tools)
+        from oterm.types import _custom
+        overrides = _custom.get("system_overrides", {})
+        system = overrides[self.chat_model.model] if self.chat_model.model in overrides else self.chat_model.system
         try:
             self.agent = get_agent(
                 provider=self.chat_model.provider,
                 model=self.chat_model.model,
-                system=self.chat_model.system,
+                system=system,
                 tools=tools,
                 toolsets=toolsets,
                 capabilities=capabilities,

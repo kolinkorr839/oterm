@@ -1,3 +1,8 @@
+Header {
+    background: #00695c;
+    color: #b2dfdb;
+}
+
 ChatContainer {
     width: 100%;
     height: 100%;
@@ -60,7 +65,7 @@ ChatItem .response {
 }
 
 ChatItem .response > MarkdownBlock {
-    margin: 1 0;
+    margin: 0 0 1 0;
     padding: 0;
 }
 
