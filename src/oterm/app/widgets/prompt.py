@@ -54,6 +54,29 @@ class PostableTextArea(TextArea):
         ),
     ]
 
+    def _find_message_container(self):
+        cur = self.parent
+        while cur is not None:
+            try:
+                return cur.query_one("#messageContainer")
+            except Exception:
+                cur = cur.parent
+        return None
+
+    def on_key(self, event) -> None:
+        scroll_keys = {
+            "up": "scroll_up",
+            "down": "scroll_down",
+            "pageup": "scroll_page_up",
+            "pagedown": "scroll_page_down",
+        }
+        if event.key in scroll_keys:
+            container = self._find_message_container()
+            if container is not None:
+                getattr(container, scroll_keys[event.key])(animate=False)
+                event.prevent_default()
+                event.stop()
+
     @dataclass
     class Submitted(Message):
         input: "PostableTextArea"

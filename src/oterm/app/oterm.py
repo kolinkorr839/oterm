@@ -41,6 +41,7 @@ class OTerm(App):
         Binding("ctrl+o", "copy_message", "copy message", id="copy.message"),
         Binding("ctrl+l", "show_logs", "show logs", id="show.logs"),
         Binding("ctrl+q", "quit", "quit", id="quit"),
+        Binding("escape", "toggle_scroll_focus", "scroll mode", show=False, priority=True),
     ]
 
     def get_system_commands(self, screen: Screen) -> Iterable[SystemCommand]:
@@ -88,6 +89,23 @@ class OTerm(App):
         yield SystemCommand(
             "Show logs", "Shows the logs of the app", self.action_show_logs
         )
+
+    def action_toggle_scroll_focus(self) -> None:
+        try:
+            tabs = self.query_one(TabbedContent)
+            if tabs.active_pane is None:
+                return
+            chat = tabs.active_pane.query_one(ChatContainer)
+            container = chat.query_one("#messageContainer")
+            prompt = chat.query_one("#prompt")
+        except Exception:
+            return
+        if container.has_focus or any(
+            w.has_focus for w in container.walk_children()
+        ):
+            prompt.focus()
+        else:
+            container.focus()
 
     async def action_quit(self) -> None:
         self.log("Quitting...")

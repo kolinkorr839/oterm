@@ -60,7 +60,7 @@ ChatItem .response {
 }
 
 ChatItem .response > MarkdownBlock {
-    margin: 0;
+    margin: 1 0;
     padding: 0;
 }
 
