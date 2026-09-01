@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import re
 
@@ -103,13 +104,19 @@ async def setup_mcp_servers() -> dict[str, list[ToolMeta]]:
         log.error(f"MCP config could not be parsed: {e}")
         return mcp_tool_meta
 
-    for name, toolset in built.items():
-        try:
-            await _exit_stack.enter_async_context(toolset)
-            tools = await toolset.list_tools()
-        except Exception as e:
-            log.error(f"MCP server {name!r} failed to initialize: {e}")
+    async def _connect_server(name: str, toolset: MCPToolset):
+        await _exit_stack.enter_async_context(toolset)
+        tools = await toolset.list_tools()
+        return name, toolset, tools
+
+    tasks = [_connect_server(n, ts) for n, ts in built.items()]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    for result in results:
+        if isinstance(result, Exception):
+            log.error(f"MCP server failed to initialize: {result}")
             continue
+        name, toolset, tools = result
         metas: list[ToolMeta] = []
         for tool in tools:
             qualified = qualified_tool_name(name, tool.name)

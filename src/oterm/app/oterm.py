@@ -6,19 +6,9 @@ from textual.binding import Binding
 from textual.screen import Screen
 from textual.widgets import Footer, Header, TabbedContent, TabPane
 
-from oterm.app.chat_edit import ChatEdit
-from oterm.app.chat_export import ChatExport, slugify
-from oterm.app.splash import splash
 from oterm.app.themes.solarized_dark import solarized_dark
-from oterm.app.widgets.chat import ChatContainer
 from oterm.app.widgets.empty_state import EmptyState
 from oterm.config import appConfig
-from oterm.providers import get_available_providers
-from oterm.store.store import Store
-from oterm.tools import load_tools
-from oterm.tools.mcp.setup import teardown_mcp_servers
-from oterm.types import ChatModel
-from oterm.utils import is_up_to_date
 
 
 class OTerm(App):
@@ -91,6 +81,8 @@ class OTerm(App):
         )
 
     def action_toggle_scroll_focus(self) -> None:
+        from oterm.app.widgets.chat import ChatContainer
+
         try:
             tabs = self.query_one(TabbedContent)
             if tabs.active_pane is None:
@@ -108,6 +100,8 @@ class OTerm(App):
             container.focus()
 
     async def action_quit(self) -> None:
+        from oterm.tools.mcp.setup import teardown_mcp_servers
+
         self.log("Quitting...")
         await teardown_mcp_servers()
         return self.exit()
@@ -124,6 +118,12 @@ class OTerm(App):
 
     @work
     async def action_new_chat(self) -> None:
+        from oterm.app.chat_edit import ChatEdit
+        from oterm.app.widgets.chat import ChatContainer
+        from oterm.providers import get_available_providers
+        from oterm.store.store import Store
+        from oterm.types import ChatModel
+
         store = await Store.get_store()
         last_provider = await store.get_last_provider()
         chat_model = (
@@ -136,6 +136,10 @@ class OTerm(App):
             return
 
         chat_model = ChatModel.model_validate_json(model_info)
+        from oterm.types import _custom  # noqa: already imported ChatModel above
+        overrides = _custom.get("system_overrides", {})
+        if chat_model.model in overrides:
+            chat_model.system = overrides[chat_model.model]
         tabs = self.query_one(TabbedContent)
         tab_count = tabs.tab_count
 
@@ -157,6 +161,8 @@ class OTerm(App):
         self._update_empty_state()
 
     async def action_edit_chat(self) -> None:
+        from oterm.app.widgets.chat import ChatContainer
+
         tabs = self.query_one(TabbedContent)
         if tabs.active_pane is None:
             return
@@ -164,6 +170,8 @@ class OTerm(App):
         chat.action_edit_chat()
 
     async def action_toggle_thinking(self) -> None:
+        from oterm.app.widgets.chat import ChatContainer
+
         tabs = self.query_one(TabbedContent)
         if tabs.active_pane is None:
             return
@@ -171,6 +179,8 @@ class OTerm(App):
         chat.action_toggle_thinking()
 
     async def action_copy_message(self) -> None:
+        from oterm.app.widgets.chat import ChatContainer
+
         tabs = self.query_one(TabbedContent)
         if tabs.active_pane is None:
             return
@@ -178,6 +188,8 @@ class OTerm(App):
         chat.action_copy_message()
 
     async def action_rename_chat(self) -> None:
+        from oterm.app.widgets.chat import ChatContainer
+
         tabs = self.query_one(TabbedContent)
         if tabs.active_pane is None:
             return
@@ -185,6 +197,8 @@ class OTerm(App):
         chat.action_rename_chat()
 
     async def action_clear_chat(self) -> None:
+        from oterm.app.widgets.chat import ChatContainer
+
         tabs = self.query_one(TabbedContent)
         if tabs.active_pane is None:
             return
@@ -192,6 +206,9 @@ class OTerm(App):
         await chat.action_clear_chat()
 
     async def action_delete_chat(self) -> None:
+        from oterm.app.widgets.chat import ChatContainer
+        from oterm.store.store import Store
+
         tabs = self.query_one(TabbedContent)
         if tabs.active_pane is None:
             return
@@ -205,6 +222,9 @@ class OTerm(App):
             self._update_empty_state()
 
     async def action_export_chat(self) -> None:
+        from oterm.app.chat_export import ChatExport, slugify
+        from oterm.app.widgets.chat import ChatContainer
+
         tabs = self.query_one(TabbedContent)
         if tabs.active_pane is None:
             return
@@ -218,6 +238,8 @@ class OTerm(App):
             self.push_screen(screen)
 
     async def action_regenerate_last_message(self) -> None:
+        from oterm.app.widgets.chat import ChatContainer
+
         tabs = self.query_one(TabbedContent)
         if tabs.active_pane is None:
             return
@@ -225,6 +247,8 @@ class OTerm(App):
         await chat.action_regenerate_llm_message()
 
     async def action_prompt_history(self) -> None:
+        from oterm.app.widgets.chat import ChatContainer
+
         tabs = self.query_one(TabbedContent)
         if tabs.active_pane is None:
             return
@@ -239,6 +263,8 @@ class OTerm(App):
 
     @work(exclusive=True, group="checks")
     async def perform_checks(self) -> None:
+        from oterm.utils import is_up_to_date
+
         up_to_date, _, latest = await is_up_to_date()
         if not up_to_date:
             self.notify(
@@ -248,10 +274,6 @@ class OTerm(App):
 
     async def on_mount(self) -> None:
         self.register_theme(solarized_dark)
-        # Tools load first: the store upgrade that qualifies MCP tool names by
-        # server needs the connected servers' tool lists.
-        await load_tools()
-        store = await Store.get_store()
         theme = appConfig.get("theme")
         if theme:  # pragma: no branch
             if theme == "dark":
@@ -262,33 +284,46 @@ class OTerm(App):
                 self.theme = theme
         self.watch(self.app, "theme", self.on_theme_change, init=False)
 
-        saved_chats = await store.get_chats()
-        # Apply any remap of key bindings.
         keymap = appConfig.get("keymap")
         if keymap:
             self.set_keymap(keymap)
 
-        async def on_splash_done(message) -> None:
-            tabs = self.query_one(TabbedContent)
-            for chat_model in saved_chats:
-                # Only process chats with a valid ID
-                if chat_model.id is not None:
-                    messages = await store.get_messages(chat_model.id)
-                    container = ChatContainer(
-                        chat_model=chat_model,
-                        messages=messages,
-                    )
-                    pane = TabPane(
-                        chat_model.name, container, id=f"chat-{chat_model.id}"
-                    )
-                    tabs.add_pane(pane)
-            self._update_empty_state()
-            self.perform_checks()
+        self._update_empty_state()
+        self._deferred_init()
 
-        if appConfig.get("splash-screen"):
-            self.push_screen(splash, callback=on_splash_done)
-        else:
-            await on_splash_done("")
+    @work
+    async def _deferred_init(self) -> None:
+        from oterm.store.store import Store
+        from oterm.tools import load_tools
+
+        await load_tools()
+        await Store.get_store()
+        self.perform_checks()
+
+    async def _auto_create_chat(self) -> None:
+        from oterm.app.widgets.chat import ChatContainer
+        from oterm.store.store import Store
+        from oterm.types import ChatModel, _custom
+
+        chat_model = ChatModel()
+        overrides = _custom.get("system_overrides", {})
+        if chat_model.model in overrides:
+            chat_model.system = overrides[chat_model.model]
+
+        tabs = self.query_one(TabbedContent)
+        chat_model.name = f"chat #1 - {chat_model.model}"
+
+        store = await Store.get_store()
+        id = await store.save_chat(chat_model)
+        chat_model.id = id
+
+        pane = TabPane(chat_model.name, id=f"chat-{id}")
+        pane.compose_add_child(
+            ChatContainer(chat_model=chat_model, messages=[])
+        )
+        await tabs.add_pane(pane)
+        tabs.active = f"chat-{id}"
+        self._update_empty_state()
 
     def on_theme_change(self, old_value: str, new_value: str) -> None:
         if appConfig.get("theme") != new_value:
@@ -297,6 +332,8 @@ class OTerm(App):
     @work
     @on(TabbedContent.TabActivated)
     async def on_tab_activated(self, event: TabbedContent.TabActivated) -> None:
+        from oterm.app.widgets.chat import ChatContainer
+
         container = event.pane.query_one(ChatContainer)
         await container.load_messages()
 
