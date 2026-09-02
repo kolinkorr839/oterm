@@ -235,9 +235,8 @@ class ChatContainer(Widget):
     def _rebuild_agent(self) -> None:
         """(Re)build the agent for the current chat_model. Defers errors to send time."""
         tools, toolsets, capabilities = _resolve_tools(self.chat_model.tools)
-        from oterm.types import _custom
-        overrides = _custom.get("system_overrides", {})
-        system = overrides[self.chat_model.model] if self.chat_model.model in overrides else self.chat_model.system
+        from oterm.types import load_prompt_template
+        system = load_prompt_template() or self.chat_model.system
         try:
             self.agent = get_agent(
                 provider=self.chat_model.provider,
@@ -701,10 +700,9 @@ class ChatContainer(Widget):
 
     async def action_history(self) -> None:
         def on_history_selected(text: str | None) -> None:
-            if text is None:
-                return
             prompt = self.query_one("#prompt", FlexibleInput)
-            prompt.text = text
+            if text is not None:
+                prompt.text = text
             prompt.focus()
 
         prompts = [message.text for message in self.messages if message.role == "user"]

@@ -77,7 +77,7 @@ class ModelSelect(Vertical):
 
     def _refresh_list(self) -> None:
         input_value = self.query_one("#model-select-input", Input).value.casefold()
-        if input_value:
+        if input_value and input_value not in {o.casefold() for o in self._options}:
             matches = [o for o in self._options if input_value in o.casefold()]
         else:
             matches = list(self._options)

@@ -44,6 +44,9 @@ def _build_model_settings(
         if settings.get("max_tokens", 0) < min_max_tokens:
             settings["max_tokens"] = min_max_tokens
 
+    if provider == "ollama" and not thinking:
+        settings.setdefault("extra_body", {})["think"] = False
+
     return ModelSettings(**settings)
 
 

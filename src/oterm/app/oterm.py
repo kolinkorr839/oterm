@@ -81,6 +81,12 @@ class OTerm(App):
         )
 
     def action_toggle_scroll_focus(self) -> None:
+        from textual.screen import ModalScreen
+
+        if isinstance(self.screen, ModalScreen):
+            self.screen.dismiss()
+            return
+
         from oterm.app.widgets.chat import ChatContainer
 
         try:
@@ -298,17 +304,14 @@ class OTerm(App):
 
         await load_tools()
         await Store.get_store()
-        self.perform_checks()
+        # self.perform_checks()
 
     async def _auto_create_chat(self) -> None:
         from oterm.app.widgets.chat import ChatContainer
         from oterm.store.store import Store
-        from oterm.types import ChatModel, _custom
+        from oterm.types import ChatModel
 
         chat_model = ChatModel()
-        overrides = _custom.get("system_overrides", {})
-        if chat_model.model in overrides:
-            chat_model.system = overrides[chat_model.model]
 
         tabs = self.query_one(TabbedContent)
         chat_model.name = f"chat #1 - {chat_model.model}"

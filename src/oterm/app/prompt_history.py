@@ -7,16 +7,10 @@ from textual.widgets import Label, OptionList
 
 class PromptHistory(ModalScreen[str]):
     history: list[str] = []
-    BINDINGS = [
-        ("escape", "cancel", "Cancel"),
-    ]
 
     def __init__(self, history=[]) -> None:
         self.history = history
         super().__init__()
-
-    def action_cancel(self) -> None:
-        self.dismiss()
 
     def on_mount(self) -> None:
         option_list = self.query_one("#prompt-history", OptionList)

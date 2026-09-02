@@ -1,9 +1,7 @@
 {
-  "model": "spanish-teacher",
-  "system": "Format your responses with clear spacing. Add a blank line between paragraphs, sections, and after headings. Use markdown formatting with headers, bullet points, and numbered lists. Keep paragraphs short.",
+  "model": "qwen3:8b",
+  "models": ["qwen3:8b", "gemma3:latest"],
   "provider": "ollama",
   "thinking": false,
-  "system_overrides": {
-    "spanish-teacher": null
-  }
+  "prompt_template": "spanish"
 }

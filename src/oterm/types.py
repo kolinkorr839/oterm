@@ -19,6 +19,20 @@ def _load_custom_defaults() -> dict[str, Any]:
 
 _custom = _load_custom_defaults()
 
+_PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
+
+
+def load_prompt_template(name: str | None = None) -> str | None:
+    """Load a prompt template by name from the prompts/ directory."""
+    template = name or _custom.get("prompt_template")
+    if not template:
+        return None
+    path = _PROMPTS_DIR / f"{template}.md"
+    try:
+        return path.read_text()
+    except FileNotFoundError:
+        return None
+
 
 class ToolDef(TypedDict):
     name: str

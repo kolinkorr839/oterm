@@ -192,12 +192,23 @@ class ChatEdit(ModalScreen[str]):
 
     async def _load_models_for_provider(self, provider: str) -> None:
         """Fetch models and update the model select."""
+        from oterm.types import _custom
+
         try:
             if provider == "ollama":
                 list_response: ListResponse = await asyncio.to_thread(
                     ollama.list_models
                 )
-                self.models = [m.model or "" for m in list_response.models]
+                allowed = _custom.get("models")
+                if allowed:
+                    allowed_set = set(allowed)
+                    self.models = [
+                        m.model or ""
+                        for m in list_response.models
+                        if m.model in allowed_set
+                    ]
+                else:
+                    self.models = [m.model or "" for m in list_response.models]
                 self.models_size = {}
                 for m in list_response.models:
                     if m.model:  # pragma: no branch
