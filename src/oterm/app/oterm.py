@@ -142,10 +142,6 @@ class OTerm(App):
             return
 
         chat_model = ChatModel.model_validate_json(model_info)
-        from oterm.types import _custom  # noqa: already imported ChatModel above
-        overrides = _custom.get("system_overrides", {})
-        if chat_model.model in overrides:
-            chat_model.system = overrides[chat_model.model]
         tabs = self.query_one(TabbedContent)
         tab_count = tabs.tab_count
 

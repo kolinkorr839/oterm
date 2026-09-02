@@ -3,5 +3,10 @@
   "models": ["qwen3:8b", "gemma3:latest"],
   "provider": "ollama",
   "thinking": false,
-  "prompt_template": "spanish"
+  "prompt_template": "spanish",
+  "parameters": {
+    "temperature": 0.6,
+    "top_p": 0.95
+  },
+  "tools": []
 }

@@ -54,8 +54,8 @@ class ChatModel(BaseModel):
     model: str = _custom.get("model", "")
     system: str | None = _custom.get("system", None)
     provider: str = _custom.get("provider", "ollama")
-    parameters: dict[str, Any] = Field(default_factory=dict)
-    tools: list[str] = Field(default_factory=list)
+    parameters: dict[str, Any] = Field(default_factory=lambda: dict(_custom.get("parameters", {})))
+    tools: list[str] = Field(default_factory=lambda: list(_custom.get("tools", [])))
     thinking: bool = _custom.get("thinking", False)
 
 
