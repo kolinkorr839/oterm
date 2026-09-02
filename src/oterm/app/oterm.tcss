@@ -137,12 +137,6 @@ ChatItem .assistantImage {
     background: transparent;
 }
 
-#info {
-    color: $text-muted;
-    text-align: right;
-    padding: 0 2;
-}
-
 UsageStatus {
     height: 1;
     width: 100%;

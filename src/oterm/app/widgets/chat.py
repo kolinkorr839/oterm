@@ -725,7 +725,6 @@ class ChatContainer(Widget):
         self.app.notify(f"Image {ev.path} added.")
 
     def compose(self) -> ComposeResult:
-        yield Static(f"model: {self.model}", id="info")
         yield VerticalScroll(id="messageContainer")
         yield FlexibleInput("", id="prompt")
 
@@ -889,10 +888,15 @@ class ChatItem(Widget):
             label.update("▾ thoughts")
             body.display = True
 
+    @staticmethod
+    def _collapse_blank_lines(text: str) -> str:
+        import re
+        return re.sub(r'\n{3,}', '\n\n', text)
+
     async def watch_text(self, text: str) -> None:
         if self.author == "user":
             return
-        await self.query_one(".response", Markdown).update(text)
+        await self.query_one(".response", Markdown).update(self._collapse_blank_lines(text))
         if text and not self.thoughts_collapsed:
             self.thoughts_collapsed = True
         self._refresh_thinking_chrome()
@@ -1008,7 +1012,7 @@ class ChatItem(Widget):
             except NoMatches:  # pragma: no cover
                 pass
             else:
-                await response.update(self.text)
+                await response.update(self._collapse_blank_lines(self.text))
         if self._thinking_stream is not None:
             await self._thinking_stream.stop()
             self._thinking_stream = None
