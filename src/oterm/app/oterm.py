@@ -292,15 +292,22 @@ class OTerm(App):
 
         self._update_empty_state()
         self._deferred_init()
+        self._deferred_mcp_init()
 
     @work
     async def _deferred_init(self) -> None:
         from oterm.store.store import Store
-        from oterm.tools import load_tools
+        from oterm.tools import builtin_tools, discover_tools
 
-        await load_tools()
+        builtin_tools.clear()
+        builtin_tools.extend(discover_tools())
         await Store.get_store()
-        # self.perform_checks()
+
+    @work
+    async def _deferred_mcp_init(self) -> None:
+        from oterm.tools.mcp.setup import setup_mcp_servers
+
+        await setup_mcp_servers()
 
     async def _auto_create_chat(self) -> None:
         from oterm.app.widgets.chat import ChatContainer

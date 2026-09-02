@@ -103,8 +103,15 @@ def _supports_vision(provider: str, model: str) -> bool:
     return False
 
 
+_ollama_capabilities_cache: dict[str, ModelCapabilities] = {}
+
+
 def _get_ollama_capabilities(model: str) -> ModelCapabilities:
-    """Get capabilities from Ollama's show API."""
+    """Get capabilities from Ollama's show API, cached per model."""
+    cached = _ollama_capabilities_cache.get(model)
+    if cached is not None:
+        return cached
+
     from oterm.providers import ollama
 
     try:
@@ -114,8 +121,10 @@ def _get_ollama_capabilities(model: str) -> ModelCapabilities:
         return ModelCapabilities()
 
     capabilities: list[str] = info.get("capabilities", [])
-    return ModelCapabilities(
+    result = ModelCapabilities(
         supports_tools="tools" in capabilities,
         supports_thinking="thinking" in capabilities,
         supports_vision="vision" in capabilities,
     )
+    _ollama_capabilities_cache[model] = result
+    return result

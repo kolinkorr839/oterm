@@ -2,6 +2,7 @@ import pytest
 
 from oterm.providers.capabilities import (
     ModelCapabilities,
+    _ollama_capabilities_cache,
     get_capabilities,
     is_chat_model,
 )
@@ -102,6 +103,8 @@ class TestGetCapabilities:
         assert caps.supports_vision is False
 
     def test_ollama_uses_show_api(self, monkeypatch):
+        _ollama_capabilities_cache.clear()
+
         def fake_show(model):
             return {"capabilities": ["tools", "thinking", "vision"]}
 
@@ -115,6 +118,8 @@ class TestGetCapabilities:
         assert caps.supports_vision is True
 
     def test_ollama_falls_back_to_empty_on_error(self, monkeypatch):
+        _ollama_capabilities_cache.clear()
+
         from oterm.log import log_lines
         from oterm.providers import ollama as ollama_mod
 

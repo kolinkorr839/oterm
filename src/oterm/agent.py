@@ -17,6 +17,9 @@ from oterm.providers.capabilities import get_capabilities
 from oterm.providers.ollama import openai_compat_base_url
 from oterm.providers.settings import get_supported_setting_keys
 
+_UNCACHED = object()
+_ollama_profile_cache: dict[str, ModelProfile | None] = {}
+
 
 def _build_model_settings(
     parameters: dict[str, Any] | None,
@@ -71,7 +74,12 @@ def get_agent(
         # supporting thinking, so the unified `thinking` setting is dropped
         # before the request and thinking can't be turned off. Ollama itself
         # reports the capability, so trust that and let the setting through.
-        profile = ollama_provider.model_profile(model)
+        cached = _ollama_profile_cache.get(model, _UNCACHED)
+        if cached is _UNCACHED:
+            profile = ollama_provider.model_profile(model)
+            _ollama_profile_cache[model] = profile
+        else:
+            profile = cached
         if profile is not None and get_capabilities(provider, model).supports_thinking:
             profile = merge_profile(profile, ModelProfile(supports_thinking=True))
         pydantic_model = OpenAIChatModel(
