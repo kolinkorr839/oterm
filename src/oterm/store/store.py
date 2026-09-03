@@ -39,6 +39,7 @@ class Store:
                         "parameters"    TEXT DEFAULT "{}",
                         "tools"         TEXT DEFAULT "[]",
                         "thinking"      BOOLEAN DEFAULT 0,
+                        "prompt_template" TEXT,
                         PRIMARY KEY("id" AUTOINCREMENT)
                     );
 
@@ -87,8 +88,8 @@ class Store:
             res = await connection.execute_insert(
                 """
                 INSERT OR REPLACE
-                INTO chat(id, name, model, system, provider, parameters, tools, thinking)
-                VALUES(:id, :name, :model, :system, :provider, :parameters, :tools, :thinking) RETURNING id;""",
+                INTO chat(id, name, model, system, provider, parameters, tools, thinking, prompt_template)
+                VALUES(:id, :name, :model, :system, :provider, :parameters, :tools, :thinking, :prompt_template) RETURNING id;""",
                 {
                     "id": chat_model.id,
                     "name": chat_model.name,
@@ -98,6 +99,7 @@ class Store:
                     "parameters": json.dumps(chat_model.parameters),
                     "tools": json.dumps(chat_model.tools),
                     "thinking": chat_model.thinking,
+                    "prompt_template": chat_model.prompt_template,
                 },
             )
             await connection.commit()
@@ -121,7 +123,8 @@ class Store:
                     provider = :provider,
                     parameters = :parameters,
                     tools = :tools,
-                    thinking = :thinking
+                    thinking = :thinking,
+                    prompt_template = :prompt_template
                 WHERE id = :id;
                 """,
                 {
@@ -132,6 +135,7 @@ class Store:
                     "parameters": json.dumps(chat_model.parameters),
                     "tools": json.dumps(chat_model.tools),
                     "thinking": chat_model.thinking,
+                    "prompt_template": chat_model.prompt_template,
                 },
             )
             await connection.commit()
@@ -140,7 +144,7 @@ class Store:
         async with aiosqlite.connect(self.db_path) as connection:
             chats = await connection.execute_fetchall(
                 """
-                SELECT id, name, model, system, provider, parameters, tools, thinking
+                SELECT id, name, model, system, provider, parameters, tools, thinking, prompt_template
                 FROM chat;
                 """
             )
@@ -155,15 +159,16 @@ class Store:
                     parameters=json.loads(parameters),
                     tools=json.loads(tools),
                     thinking=thinking,
+                    prompt_template=prompt_template,
                 )
-                for id, name, model, system, provider, parameters, tools, thinking in chats
+                for id, name, model, system, provider, parameters, tools, thinking, prompt_template in chats
             ]
 
     async def get_chat(self, id: int) -> ChatModel | None:
         async with aiosqlite.connect(self.db_path) as connection:
             chat = await connection.execute_fetchall(
                 """
-                SELECT id, name, model, system, provider, parameters, tools, thinking
+                SELECT id, name, model, system, provider, parameters, tools, thinking, prompt_template
                 FROM chat
                 WHERE id = :id;
                 """,
@@ -180,6 +185,7 @@ class Store:
                     parameters,
                     tools,
                     thinking,
+                    prompt_template,
                 ) = chat
                 return ChatModel(
                     id=id,
@@ -190,6 +196,7 @@ class Store:
                     parameters=json.loads(parameters),
                     tools=json.loads(tools),
                     thinking=thinking,
+                    prompt_template=prompt_template,
                 )
             return None
 

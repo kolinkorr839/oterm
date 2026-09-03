@@ -8,5 +8,9 @@
     "temperature": 0.6,
     "top_p": 0.95
   },
-  "tools": []
+  "tools": [],
+  "presets": {
+    "S": { "label": "Spanish", "prompt_template": "spanish" },
+    "C": { "label": "Chinese", "prompt_template": "chinese" }
+  }
 }

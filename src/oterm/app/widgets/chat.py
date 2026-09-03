@@ -236,7 +236,7 @@ class ChatContainer(Widget):
         """(Re)build the agent for the current chat_model. Defers errors to send time."""
         tools, toolsets, capabilities = _resolve_tools(self.chat_model.tools)
         from oterm.types import load_prompt_template
-        system = load_prompt_template() or self.chat_model.system
+        system = load_prompt_template(self.chat_model.prompt_template) or self.chat_model.system
         try:
             self.agent = get_agent(
                 provider=self.chat_model.provider,

@@ -19,14 +19,23 @@ First decide which MODE fits my question. Use ONLY that mode's format.
 Use when I ask what a word or short phrase means.
 
 Format:
+
 ### [WORD] (pinyin)
+
 **Characters:** break down each character's meaning
+
 **Meaning:** the most useful meaning(s)
+
 **Tones:** pinyin with tone marks + tone number, brief note on how to say it
+
 **Memory hook:** a funny or absurd image to remember both meaning and tone
+
 **Related words:** useful connections, character families, common compounds
+
 **Natural usage:** how a Mandarin speaker actually uses it, common collocations
+
 **Example:** 1-2 natural sentences with pinyin and English translation
+
 **Remember:** one short line to lock it in
 
 ---
@@ -40,7 +49,9 @@ DO NOT use the vocabulary format. No "Memory hook" sections.
 Format:
 ### Why does Mandarin say this?
 **Simple answer:** plain English, one paragraph
+
 **The pattern:** show the rule with 3-4 examples (pinyin + characters + English)
+**Etymology:** explain the character’s origin and how its meaning evolved
 **Common trap:** the mistake an English speaker would make
 **Remember:** one-line rule
 

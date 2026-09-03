@@ -142,10 +142,13 @@ class OTerm(App):
             return
 
         chat_model = ChatModel.model_validate_json(model_info)
+        from oterm.types import preset_key_for_template
         tabs = self.query_one(TabbedContent)
         tab_count = tabs.tab_count
 
-        name = f"chat #{tab_count + 1} - {chat_model.model}"
+        preset_key = preset_key_for_template(chat_model.prompt_template)
+        suffix = f" ({preset_key})" if preset_key else ""
+        name = f"chat #{tab_count + 1} - {chat_model.model}{suffix}"
         chat_model.name = name
 
         id = await store.save_chat(chat_model)
@@ -312,12 +315,14 @@ class OTerm(App):
     async def _auto_create_chat(self) -> None:
         from oterm.app.widgets.chat import ChatContainer
         from oterm.store.store import Store
-        from oterm.types import ChatModel
+        from oterm.types import ChatModel, preset_key_for_template
 
         chat_model = ChatModel()
 
         tabs = self.query_one(TabbedContent)
-        chat_model.name = f"chat #1 - {chat_model.model}"
+        preset_key = preset_key_for_template(chat_model.prompt_template)
+        suffix = f" ({preset_key})" if preset_key else ""
+        chat_model.name = f"chat #1 - {chat_model.model}{suffix}"
 
         store = await Store.get_store()
         id = await store.save_chat(chat_model)

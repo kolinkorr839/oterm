@@ -27,7 +27,7 @@ from oterm.providers import (
 from oterm.providers.capabilities import get_capabilities
 from oterm.providers.ollama import parse_modelfile_parameters
 from oterm.providers.settings import get_supported_setting_keys
-from oterm.types import ChatModel
+from oterm.types import ChatModel, get_presets, load_prompt_template
 
 
 @dataclass(frozen=True)
@@ -92,6 +92,7 @@ class ChatEdit(ModalScreen[str]):
     tools: reactive[list[str]] = reactive([])
     edit_mode: reactive[bool] = reactive(False)
     thinking: reactive[bool] = reactive(False)
+    prompt_template: reactive[str | None] = reactive(None)
 
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
@@ -116,6 +117,7 @@ class ChatEdit(ModalScreen[str]):
         self.tools = chat_model.tools
         self.edit_mode = edit_mode
         self.thinking = chat_model.thinking
+        self.prompt_template = chat_model.prompt_template
         self._loaded_model: str = ""
 
     def _return_chat_meta(self) -> None:
@@ -150,6 +152,11 @@ class ChatEdit(ModalScreen[str]):
         self.tools = self.query_one(ToolSelector).selected
         self.thinking = self.query_one("#thinking-checkbox", Checkbox).value
 
+        preset_select = self.query_one("#preset-select", Select)
+        self.prompt_template = (
+            "" if preset_select.value is Select.BLANK else str(preset_select.value)
+        )
+
         updated_chat_model = ChatModel(
             id=self.chat_model.id,
             name=self.chat_model.name,
@@ -159,6 +166,7 @@ class ChatEdit(ModalScreen[str]):
             parameters=parameters,
             tools=self.tools,
             thinking=self.thinking,
+            prompt_template=self.prompt_template,
         )
 
         self.dismiss(updated_chat_model.model_dump_json(exclude_none=True))
@@ -170,6 +178,10 @@ class ChatEdit(ModalScreen[str]):
         self._return_chat_meta()
 
     async def on_mount(self) -> None:
+        if self.prompt_template:
+            content = load_prompt_template(self.prompt_template) or ""
+            self.query_one(".system", TextArea).load_text(content)
+
         provider_select = self.query_one("#provider-select", Select)
         provider_select.value = self.provider
 
@@ -293,7 +305,14 @@ class ChatEdit(ModalScreen[str]):
         await self._load_model_info(event.value)
 
     async def on_select_changed(self, event: Select.Changed) -> None:
-        if event.select.id == "provider-select":
+        if event.select.id == "preset-select":
+            if event.value is not Select.BLANK:
+                template_name = str(event.value)
+                content = load_prompt_template(template_name) or ""
+                self.query_one(".system", TextArea).load_text(content)
+            else:
+                self.query_one(".system", TextArea).load_text("")
+        elif event.select.id == "provider-select":
             new_provider = str(event.value)
             if new_provider != self.provider:
                 self.provider = new_provider
@@ -315,13 +334,16 @@ class ChatEdit(ModalScreen[str]):
     def compose(self) -> ComposeResult:
         providers = get_available_providers()
         provider_options = [(get_provider_name(p), p) for p in providers]
-        # Preserve a chat's saved provider even when the endpoint is no longer
-        # configured (e.g. an `openai-compat/<name>` removed from config.json).
-        # Without this the Select would reject the value at mount time.
         if self.provider and self.provider not in providers:
             provider_options.insert(
                 0, (f"{get_provider_name(self.provider)} (unavailable)", self.provider)
             )
+
+        presets = get_presets()
+        preset_options = [
+            (f"({key}) {p['label']}", p["prompt_template"])
+            for key, p in presets.items()
+        ]
 
         with Container(id="chat-edit-screen", classes="screen-container full-height"):
             with Horizontal(id="top-labels"):
@@ -335,6 +357,13 @@ class ChatEdit(ModalScreen[str]):
                 yield Label("System:", classes="title info-right")
             with Horizontal(id="top-row"):
                 with Vertical():
+                    yield Select(
+                        preset_options,
+                        id="preset-select",
+                        value=self.prompt_template if self.prompt_template else Select.BLANK,
+                        prompt="Preset...",
+                        allow_blank=True,
+                    )
                     yield Select(
                         provider_options,
                         id="provider-select",
